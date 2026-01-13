@@ -57,14 +57,16 @@ func main() {
 
 func getUsers(conn *pgx.Conn) gin.HandlerFunc {
 	fn := func(c *gin.Context) {
-		var row string
-		err := conn.QueryRow(context.Background(), "SELECT name FROM users WHERE id=1;").Scan(&row)
+		var users []user
+
+		rows, _ := conn.Query(context.Background(), "SELECT * FROM users;")
+		users, err := pgx.CollectRows(rows, pgx.RowToStructByNameLax[user])
 		if err != nil {
 			log.Fatal("Error Fetching Row: " + err.Error())
 			os.Exit(1)
 		}
 
-		c.IndentedJSON(http.StatusOK, row)
+		c.IndentedJSON(http.StatusOK, users)
 	}
 	return gin.HandlerFunc(fn)
 }
