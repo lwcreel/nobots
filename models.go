@@ -3,50 +3,52 @@ package main
 import "time"
 
 type user struct {
-	name      string
-	username  string
-	email     string
-	password  string // change to hash
-	followers []user
-	following []user
-	posts     []post
-	comments  []comment
+	id        string
+	Name      string
+	Username  string
+	Email     string
+	Password  string // change to hash
+	Followers []user
+	Following []user
+	Posts     []post
+	Comments  []comment
 }
 
 func newUser(
-	name string,
-	username string,
-	email string,
-	password string,
+	Name string,
+	Username string,
+	Email string,
+	Password string,
 ) *user {
 
 	u := user{
-		name:      name,
-		username:  username,
-		email:     email,
-		password:  password,
-		followers: make([]user, 0),
-		following: make([]user, 0),
-		posts:     make([]post, 0),
-		comments:  make([]comment, 0),
+		Name:      Name,
+		Username:  Username,
+		Email:     Email,
+		Password:  Password,
+		Followers: make([]user, 0),
+		Following: make([]user, 0),
+		Posts:     make([]post, 0),
+		Comments:  make([]comment, 0),
 	}
 
 	return &u
 }
 
 type post struct {
-	author   user
-	content  string
-	date     time.Time
-	comments []comment
+	Id       string
+	Author   user
+	Content  string
+	Date     time.Time
+	Comments []comment
 }
 
-func newPost(author user, content string, date time.Time) *post {
+func newPost(Author user, Content string, Date time.Time) *post {
 	p := post{
-		author:   author,
-		content:  content,
-		date:     date,
-		comments: make([]comment, 0),
+		Author:   Author,
+		Content:  Content,
+		Date:     Date,
+		Comments: make([]comment, 0),
 	}
 
 	return &p
@@ -54,18 +56,19 @@ func newPost(author user, content string, date time.Time) *post {
 }
 
 type comment struct {
-	author   user
-	content  string
-	date     time.Time
-	comments []comment
+	Id       string
+	Author   user
+	Content  string
+	Date     time.Time
+	Comments []comment
 }
 
 func newComment(author user, content string, date time.Time) *comment {
 	c := comment{
-		author:   author,
-		content:  content,
-		date:     date,
-		comments: make([]comment, 0),
+		Author:   author,
+		Content:  content,
+		Date:     date,
+		Comments: make([]comment, 0),
 	}
 
 	return &c

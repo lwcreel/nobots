@@ -1,0 +1,58 @@
+package main
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+)
+
+var users = []user{
+	{
+		id:        "1",
+		name:      "John Doe",
+		username:  "jdog",
+		email:     "johndoe@example.com",
+		password:  "Password1",
+		followers: make([]user, 0),
+		following: make([]user, 0),
+		posts:     make([]post, 0),
+		comments:  make([]comment, 0),
+	},
+	{
+		id:        "2",
+		name:      "Jane Doe",
+		username:  "jkitty",
+		email:     "janedoe@example.com",
+		password:  "Password1",
+		followers: make([]user, 0),
+		following: make([]user, 0),
+		posts:     make([]post, 0),
+		comments:  make([]comment, 0),
+	},
+	{
+		id:        "3",
+		name:      "Adam Smith",
+		username:  "adamsapple24",
+		email:     "asmith23@example.com",
+		password:  "Password1",
+		followers: make([]user, 0),
+		following: make([]user, 0),
+		posts:     make([]post, 0),
+		comments:  make([]comment, 0),
+	},
+}
+
+func main() {
+	// Create a Gin router with default middleware (logger and recovery)
+	router := gin.Default()
+
+	router.GET("/users", getUsers)
+
+	// Start Server on Port 8080 (default)
+	// Server will listen on 0.0.0.0.8080 (localhost:8080 on Windows)
+	router.Run("localhost:8080")
+}
+
+func getUsers(c *gin.Context) {
+	c.JSON(http.StatusOK, users)
+}
