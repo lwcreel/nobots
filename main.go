@@ -27,6 +27,7 @@ func main() {
 
 	connectionString := "postgresql://" + dbUser + ":" + dbPass + "@" + dbHost + ":" + dbPort + "/" + dbName
 
+	// TODO: Switch to Connection Pool for Concurrency
 	conn, err := pgx.Connect(
 		context.Background(),
 		connectionString,
@@ -48,18 +49,21 @@ func main() {
 	router := gin.Default()
 
 	router.GET("/users", getUsers(conn))
-	router.POST("/users", postUsers)
+	router.POST("/users", postUsers(conn))
 
 	// Start Server on Port 8080 (default)
 	// Server will listen on 0.0.0.0.8080 (localhost:8080 on Windows)
 	router.Run("localhost:8080")
 }
 
+// TODO: Errors in HTTP Requests Shoulnd't Kill Server
+
 func getUsers(conn *pgx.Conn) gin.HandlerFunc {
 	fn := func(c *gin.Context) {
 		var users []user
+		query := `SELECT * FROM users;`
 
-		rows, _ := conn.Query(context.Background(), "SELECT * FROM users;")
+		rows, _ := conn.Query(context.Background(), query)
 		users, err := pgx.CollectRows(rows, pgx.RowToStructByNameLax[user])
 		if err != nil {
 			log.Fatal("Error Fetching Row: " + err.Error())
@@ -71,15 +75,30 @@ func getUsers(conn *pgx.Conn) gin.HandlerFunc {
 	return gin.HandlerFunc(fn)
 }
 
-func postUsers(c *gin.Context) {
-	var newUser user
+func postUsers(conn *pgx.Conn) gin.HandlerFunc {
+	fn := func(c *gin.Context) {
+		var newUser user
 
-	// Binds the Received JSON to newUser
-	if err := c.BindJSON(&newUser); err != nil {
-		fmt.Print(err)
-		return
+		if err := c.BindJSON(&newUser); err != nil {
+			log.Fatal("Error Binding JSON: " + err.Error())
+			os.Exit(1)
+		}
+
+		query := `INSERT INTO users (name, username, email, passhash) VALUES (@name, @username, @email, @passhash) ON CONFLICT DO NOTHING`
+		args := pgx.NamedArgs{
+			"name":     newUser.Name,
+			"username": newUser.Username,
+			"email":    newUser.Email,
+			"passhash": newUser.Passhash,
+		}
+
+		_, err := conn.Query(context.Background(), query, args)
+		if err != nil {
+			log.Fatal("Error Fetching Row: " + err.Error())
+			os.Exit(1)
+		}
+
+		c.IndentedJSON(http.StatusCreated, newUser)
 	}
-
-	//users = append(users, newUser)
-	c.IndentedJSON(http.StatusCreated, newUser)
+	return gin.HandlerFunc(fn)
 }
