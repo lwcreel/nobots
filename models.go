@@ -3,15 +3,15 @@ package main
 import "time"
 
 type user struct {
-	id        string
-	Name      string
-	Username  string
-	Email     string
-	Password  string // change to hash
-	Followers []user
-	Following []user
-	Posts     []post
-	Comments  []comment
+	id       string
+	Name     string
+	Username string
+	Email    string
+	Password string // change to hash
+	// Followers []user
+	// Following []user
+	// Posts     []post
+	// Comments  []comment
 }
 
 func newUser(
@@ -22,14 +22,14 @@ func newUser(
 ) *user {
 
 	u := user{
-		Name:      Name,
-		Username:  Username,
-		Email:     Email,
-		Password:  Password,
-		Followers: make([]user, 0),
-		Following: make([]user, 0),
-		Posts:     make([]post, 0),
-		Comments:  make([]comment, 0),
+		Name:     Name,
+		Username: Username,
+		Email:    Email,
+		Password: Password,
+		//		Followers: make([]user, 0),
+		//		Following: make([]user, 0),
+		//		Posts:     make([]post, 0),
+		//		Comments:  make([]comment, 0),
 	}
 
 	return &u

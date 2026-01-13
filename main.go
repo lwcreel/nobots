@@ -1,53 +1,53 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
+	"github.com/joho/godotenv"
 )
 
-var users = []user{
-	{
-		id:        "1",
-		Name:      "John Doe",
-		Username:  "jdog",
-		Email:     "johndoe@example.com",
-		Password:  "",
-		Followers: make([]user, 0),
-		Following: make([]user, 0),
-		Posts:     make([]post, 0),
-		Comments:  make([]comment, 0),
-	},
-	{
-		id:        "2",
-		Name:      "Jane Doe",
-		Username:  "jkitty",
-		Email:     "janedoe@example.com",
-		Password:  "",
-		Followers: make([]user, 0),
-		Following: make([]user, 0),
-		Posts:     make([]post, 0),
-		Comments:  make([]comment, 0),
-	},
-	{
-		id:        "3",
-		Name:      "Adam Smith",
-		Username:  "adamsapple24",
-		Email:     "asmith23@example.com",
-		Password:  "",
-		Followers: make([]user, 0),
-		Following: make([]user, 0),
-		Posts:     make([]post, 0),
-		Comments:  make([]comment, 0),
-	},
-}
-
 func main() {
+
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error Loading .env File")
+	}
+
+	dbUser := os.Getenv("DB_USER")
+	dbPass := os.Getenv("DB_PASS")
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dbName := os.Getenv("DB_NAME")
+
+	connectionString := "postgresql://" + dbUser + ":" + dbPass + "@" + dbHost + ":" + dbPort + "/" + dbName
+
+	conn, err := pgx.Connect(
+		context.Background(),
+		connectionString,
+	)
+
+	if err != nil {
+		fmt.Fprint(os.Stderr, "Unable to connect to DB: %v\n", err)
+		os.Exit(1)
+	}
+
+	defer conn.Close(context.Background())
+
+	if err != nil {
+		fmt.Fprint(os.Stderr, "QueryRow Failed: %v\n", err)
+		os.Exit(1)
+	}
+
 	// Create a Gin router with default middleware (logger and recovery)
 	router := gin.Default()
 
-	router.GET("/users", getUsers)
+	router.GET("/users", getUsers(conn))
 	router.POST("/users", postUsers)
 
 	// Start Server on Port 8080 (default)
@@ -55,8 +55,18 @@ func main() {
 	router.Run("localhost:8080")
 }
 
-func getUsers(c *gin.Context) {
-	c.IndentedJSON(http.StatusOK, users)
+func getUsers(conn *pgx.Conn) gin.HandlerFunc {
+	fn := func(c *gin.Context) {
+		var row string
+		err := conn.QueryRow(context.Background(), "SELECT name FROM users WHERE id=1;").Scan(&row)
+		if err != nil {
+			log.Fatal("Error Fetching Row: " + err.Error())
+			os.Exit(1)
+		}
+
+		c.IndentedJSON(http.StatusOK, row)
+	}
+	return gin.HandlerFunc(fn)
 }
 
 func postUsers(c *gin.Context) {
@@ -68,6 +78,6 @@ func postUsers(c *gin.Context) {
 		return
 	}
 
-	users = append(users, newUser)
+	//users = append(users, newUser)
 	c.IndentedJSON(http.StatusCreated, newUser)
 }
