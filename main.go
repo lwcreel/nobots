@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -12,7 +13,7 @@ var users = []user{
 		Name:      "John Doe",
 		Username:  "jdog",
 		Email:     "johndoe@example.com",
-		Password:  "Password1",
+		Password:  "",
 		Followers: make([]user, 0),
 		Following: make([]user, 0),
 		Posts:     make([]post, 0),
@@ -23,7 +24,7 @@ var users = []user{
 		Name:      "Jane Doe",
 		Username:  "jkitty",
 		Email:     "janedoe@example.com",
-		Password:  "Password1",
+		Password:  "",
 		Followers: make([]user, 0),
 		Following: make([]user, 0),
 		Posts:     make([]post, 0),
@@ -34,7 +35,7 @@ var users = []user{
 		Name:      "Adam Smith",
 		Username:  "adamsapple24",
 		Email:     "asmith23@example.com",
-		Password:  "Password1",
+		Password:  "",
 		Followers: make([]user, 0),
 		Following: make([]user, 0),
 		Posts:     make([]post, 0),
@@ -47,6 +48,7 @@ func main() {
 	router := gin.Default()
 
 	router.GET("/users", getUsers)
+	router.POST("/users", postUsers)
 
 	// Start Server on Port 8080 (default)
 	// Server will listen on 0.0.0.0.8080 (localhost:8080 on Windows)
@@ -55,4 +57,17 @@ func main() {
 
 func getUsers(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, users)
+}
+
+func postUsers(c *gin.Context) {
+	var newUser user
+
+	// Binds the Received JSON to newUser
+	if err := c.BindJSON(&newUser); err != nil {
+		fmt.Print(err)
+		return
+	}
+
+	users = append(users, newUser)
+	c.IndentedJSON(http.StatusCreated, newUser)
 }
