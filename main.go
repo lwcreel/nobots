@@ -16,9 +16,12 @@ func main() {
 
 	// Create a Gin router with default middleware (logger and recovery)
 	router := gin.Default()
+	router.SetTrustedProxies(nil)
 
-	router.GET("/users", user.GetUsers(conn))
 	router.POST("/users", user.PostUsers(conn))
+	router.GET("/users", user.GetUsers(conn))
+	router.DELETE("/users", user.DeleteUsers(conn))
+	router.PUT("/users", user.PutUsers(conn))
 
 	// Start Server on Port 8080 (default)
 	// Server will listen on 0.0.0.0.8080 (localhost:8080 on Windows)
