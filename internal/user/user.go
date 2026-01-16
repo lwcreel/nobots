@@ -29,7 +29,6 @@ type queryParams struct {
 	Id string `form:"id" query:"id"`
 }
 
-// TODO: Errors in HTTP Requests Shoulnd't Kill Server
 func GetUsers(conn *pgx.Conn) gin.HandlerFunc {
 	fn := func(c *gin.Context) {
 		var users []User
@@ -71,8 +70,7 @@ func PostUsers(conn *pgx.Conn) gin.HandlerFunc {
 		var newUser User
 
 		if err := c.BindJSON(&newUser); err != nil {
-			log.Fatal("Error Binding JSON: " + err.Error())
-			os.Exit(1)
+			c.JSON(400, gin.H{"error": err.Error()})
 		}
 
 		query := `INSERT INTO users (name, username, email, passhash) VALUES (@name, @username, @email, @passhash) ON CONFLICT DO NOTHING`
@@ -85,8 +83,7 @@ func PostUsers(conn *pgx.Conn) gin.HandlerFunc {
 
 		_, err := conn.Query(context.Background(), query, args)
 		if err != nil {
-			log.Fatal("Error Fetching Row: " + err.Error())
-			os.Exit(1)
+			c.JSON(500, gin.H{"error": err.Error()})
 		}
 
 		c.IndentedJSON(http.StatusCreated, newUser)
