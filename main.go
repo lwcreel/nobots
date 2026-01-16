@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 	"github.com/joho/godotenv"
+	"github.com/lwcreel/nobots/internal/user"
 )
 
 func main() {
@@ -60,11 +61,11 @@ func main() {
 
 func getUsers(conn *pgx.Conn) gin.HandlerFunc {
 	fn := func(c *gin.Context) {
-		var users []user
+		var users []user.User
 		query := `SELECT * FROM users;`
 
 		rows, _ := conn.Query(context.Background(), query)
-		users, err := pgx.CollectRows(rows, pgx.RowToStructByNameLax[user])
+		users, err := pgx.CollectRows(rows, pgx.RowToStructByNameLax[user.User])
 		if err != nil {
 			log.Fatal("Error Fetching Row: " + err.Error())
 			os.Exit(1)
@@ -77,7 +78,7 @@ func getUsers(conn *pgx.Conn) gin.HandlerFunc {
 
 func postUsers(conn *pgx.Conn) gin.HandlerFunc {
 	fn := func(c *gin.Context) {
-		var newUser user
+		var newUser user.User
 
 		if err := c.BindJSON(&newUser); err != nil {
 			log.Fatal("Error Binding JSON: " + err.Error())
