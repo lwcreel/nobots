@@ -16,6 +16,7 @@ func main() {
 
 	// Create a Gin router with default middleware (logger and recovery)
 	router := gin.Default()
+	router.SetTrustedProxies(nil)
 
 	router.GET("/users", user.GetUsers(conn))
 	router.POST("/users", user.PostUsers(conn))
