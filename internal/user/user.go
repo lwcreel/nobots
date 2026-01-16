@@ -1,5 +1,16 @@
 package user
 
+import (
+	"context"
+	"log"
+	"net/http"
+	"os"
+
+	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
+)
+
+// ====== typedef ======
 type User struct {
 	Id       string `db:"id"`
 	Name     string `db:"name"`
@@ -12,23 +23,49 @@ type User struct {
 	// Comments  []comment
 }
 
-func newUser(
-	Name string,
-	Username string,
-	Email string,
-	Passhash string,
-) *User {
+// ====== HTTP Requests ======
+// TODO: Errors in HTTP Requests Shoulnd't Kill Server
+func GetUsers(conn *pgx.Conn) gin.HandlerFunc {
+	fn := func(c *gin.Context) {
+		var users []User
+		query := `SELECT * FROM users;`
 
-	u := User{
-		Name:     Name,
-		Username: Username,
-		Email:    Email,
-		Passhash: Passhash,
-		//		Followers: make([]user, 0),
-		//		Following: make([]user, 0),
-		//		Posts:     make([]post, 0),
-		//		Comments:  make([]comment, 0),
+		rows, _ := conn.Query(context.Background(), query)
+		users, err := pgx.CollectRows(rows, pgx.RowToStructByNameLax[User])
+		if err != nil {
+			log.Fatal("Error Fetching Row: " + err.Error())
+			os.Exit(1)
+		}
+
+		c.IndentedJSON(http.StatusOK, users)
 	}
+	return gin.HandlerFunc(fn)
+}
 
-	return &u
+func PostUsers(conn *pgx.Conn) gin.HandlerFunc {
+	fn := func(c *gin.Context) {
+		var newUser User
+
+		if err := c.BindJSON(&newUser); err != nil {
+			log.Fatal("Error Binding JSON: " + err.Error())
+			os.Exit(1)
+		}
+
+		query := `INSERT INTO users (name, username, email, passhash) VALUES (@name, @username, @email, @passhash) ON CONFLICT DO NOTHING`
+		args := pgx.NamedArgs{
+			"name":     newUser.Name,
+			"username": newUser.Username,
+			"email":    newUser.Email,
+			"passhash": newUser.Passhash,
+		}
+
+		_, err := conn.Query(context.Background(), query, args)
+		if err != nil {
+			log.Fatal("Error Fetching Row: " + err.Error())
+			os.Exit(1)
+		}
+
+		c.IndentedJSON(http.StatusCreated, newUser)
+	}
+	return gin.HandlerFunc(fn)
 }
