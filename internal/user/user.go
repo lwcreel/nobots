@@ -24,17 +24,41 @@ type User struct {
 }
 
 // ====== HTTP Requests ======
+
+type queryParams struct {
+	Id string `form:"id" query:"id"`
+}
+
 // TODO: Errors in HTTP Requests Shoulnd't Kill Server
 func GetUsers(conn *pgx.Conn) gin.HandlerFunc {
 	fn := func(c *gin.Context) {
 		var users []User
-		query := `SELECT * FROM users;`
+		var params queryParams
+		var query string
+		var err error
 
-		rows, _ := conn.Query(context.Background(), query)
-		users, err := pgx.CollectRows(rows, pgx.RowToStructByNameLax[User])
+		if err := c.ShouldBindQuery(&params); err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+			return
+		}
+
+		args := pgx.NamedArgs{
+			"id": params.Id,
+		}
+
+		if params.Id == "" {
+			query = `SELECT * FROM users;`
+			rows, _ := conn.Query(context.Background(), query)
+			users, err = pgx.CollectRows(rows, pgx.RowToStructByNameLax[User])
+		} else {
+			query = `SELECT * FROM users WHERE id=@id`
+			rows, _ := conn.Query(context.Background(), query, args)
+			users, err = pgx.CollectRows(rows, pgx.RowToStructByNameLax[User])
+		}
+
 		if err != nil {
-			log.Fatal("Error Fetching Row: " + err.Error())
-			os.Exit(1)
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
 		}
 
 		c.IndentedJSON(http.StatusOK, users)
