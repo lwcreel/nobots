@@ -2,9 +2,7 @@ package user
 
 import (
 	"context"
-	"log"
 	"net/http"
-	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
@@ -27,6 +25,34 @@ type User struct {
 
 type queryParams struct {
 	Id string `form:"id" query:"id"`
+}
+
+func PostUsers(conn *pgx.Conn) gin.HandlerFunc {
+	fn := func(c *gin.Context) {
+		var newUser User
+
+		if err := c.BindJSON(&newUser); err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+		}
+
+		query := `INSERT INTO users (name, username, email, passhash) VALUES (@name, @username, @email, @passhash) ON CONFLICT DO NOTHING`
+		args := pgx.NamedArgs{
+			"name":     newUser.Name,
+			"username": newUser.Username,
+			"email":    newUser.Email,
+			"passhash": newUser.Passhash,
+		}
+
+		row, err := conn.Query(context.Background(), query, args)
+		if err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+		}
+
+		defer row.Close()
+
+		c.JSON(http.StatusCreated, newUser)
+	}
+	return gin.HandlerFunc(fn)
 }
 
 func GetUsers(conn *pgx.Conn) gin.HandlerFunc {
@@ -60,33 +86,34 @@ func GetUsers(conn *pgx.Conn) gin.HandlerFunc {
 			return
 		}
 
-		c.IndentedJSON(http.StatusOK, users)
+		c.JSON(http.StatusOK, users)
 	}
 	return gin.HandlerFunc(fn)
 }
 
-func PostUsers(conn *pgx.Conn) gin.HandlerFunc {
+func DeleteUsers(conn *pgx.Conn) gin.HandlerFunc {
 	fn := func(c *gin.Context) {
-		var newUser User
+		var params queryParams
+		var query string
 
-		if err := c.BindJSON(&newUser); err != nil {
+		if err := c.ShouldBindQuery(&params); err != nil {
 			c.JSON(400, gin.H{"error": err.Error()})
+			return
 		}
 
-		query := `INSERT INTO users (name, username, email, passhash) VALUES (@name, @username, @email, @passhash) ON CONFLICT DO NOTHING`
+		query = `DELETE FROM users WHERE id=@id`
 		args := pgx.NamedArgs{
-			"name":     newUser.Name,
-			"username": newUser.Username,
-			"email":    newUser.Email,
-			"passhash": newUser.Passhash,
+			"id": params.Id,
 		}
 
-		_, err := conn.Query(context.Background(), query, args)
+		row, err := conn.Query(context.Background(), query, args)
 		if err != nil {
 			c.JSON(500, gin.H{"error": err.Error()})
 		}
 
-		c.IndentedJSON(http.StatusCreated, newUser)
+		defer row.Close()
+
+		c.Status(http.StatusNoContent)
 	}
 	return gin.HandlerFunc(fn)
 }
